@@ -9,4 +9,4 @@ class Transacao(db.Model):
     descricao = db.Column(db.String(100))
 
     def __repr__(self):
-        return f'<Transacao {self.tipo} - {self.valor}>'
+        return f'<Transacao {self.tipo} - {self.valor}>' 
