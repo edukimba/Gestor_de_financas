@@ -1,6 +1,7 @@
 from flask import Flask
 from database import db
 from routes import app_routes
+from errors import errors
 
 app = Flask(__name__)
 
@@ -15,7 +16,8 @@ db.init_app(app)
 
 #RESGITRO DE ROTAS:
 
-app.register_blueprint(app_routes)
+app.register_blueprint(app_routes) #REGISTRO DE ROTAS
+app.register_blueprint(errors) #REGISTRAR ERROS
 
 #CRIAR O BANCO DE DADOS:
 

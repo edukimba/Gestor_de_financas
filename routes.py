@@ -8,20 +8,41 @@ app_routes = Blueprint('app_routes', __name__)
 
 @app_routes.route('/transacoes', methods=['POST'])
 def criar_transacao():
-    dados = request.get_json()
-    nova = Transacao(
-        tipo=dados['tipo'],
-        valor=dados['valor'],
-        descricao= dados.get('descricao', '')
-    )
-    db.session.add(nova)
-    db.session.commit()
-    return jsonify({'mensagem': 'Transação criada com sucesso!'}), 201
+    try:
+        dados = request.get_json()
+
+        if not dados:
+            return jsonify({"erro": "Nenhum dado enviado. Envie um JSON válido."}), 400
+        
+        if 'tipo' not in dados or 'valor' not in dados:
+            return jsonify({"erro": "Os campos 'tipo' são obrigatórios. "}), 400
+        
+        
+        try:
+            valor = float(dados['valor'])
+        except ValueError:
+            return jsonify({"erro": "o campo 'valor' deve ser númerico." }), 400
+        
+        nova = Transacao(
+            tipo=dados['tipo'],
+            valor=valor,
+            descricao=dados.get('descricao', '')
+        )
+
+        db.session.add(nova)
+        db.session.commit()
+
+        return jsonify({"mensagem": "Transaçaõ criada com sucesso!"}), 201
+    
+    except Exception as e:
+
+        return jsonify({"erro": f"Ocorreu um erro interno: {str(e)}"}), 500
+
 
 #LISTAR TRANSAÇÕES:
 
 @app_routes.route('/transacoes', methods=['GET']) 
-def listar_transacoes():
+def controle_transacoes():
     transacoes = Transacao.query.all()
     resultado = [
         {'id': t.id, 'tipo': t.tipo, 'valor': t.valor, 'descricao': t.descricao}
@@ -34,12 +55,18 @@ def listar_transacoes():
 
 @app_routes.route('/transacoes/<int:id>', methods=['DELETE'])
 def deletar_transacao(id):
-    transacao = Transacao.query.get(id)
-    if transacao:
+    try:
+        transacao = Transacao.queryl.get(id)
+        if not transacao:
+            return jsonify({"erro": "Transação não encontrada!"}), 404
+        
         db.session.delete(transacao)
         db.session.commit()
-        return jsonify({'mensagem': 'Transacao deletada com sucesso!'})
-    return jsonify({'erro': 'Transação não encontrada'}), 404
+
+        return({"mensagem": "Transação deletada com sucesso!"}), 200
+
+    except Exception as e:
+        return({"erro": f"Ocorreu um erro interno: {str(e)}"}), 500
 
 #ATUALIZAR TRANSAÇÃO:
 
@@ -47,7 +74,7 @@ def deletar_transacao(id):
 def atualizar_transacao(id):
     transacao = Transacao.query.get(id)
     if not transacao:
-        return jsonify({'erro': 'Transação não encontrada!'}), 404
+        return jsonify({"erro": "Transação não encontrada!"}), 404
     
     dados = request.get_json()
 
@@ -56,7 +83,8 @@ def atualizar_transacao(id):
     transacao.descricao = dados.get('descricao', transacao.descricao)
 
     db.session.commit()
-    return jsonify({'mensagem': 'Transação atualizada com sucesso!'})
+
+    return jsonify({"mensagem": "Transação atualizada com sucesso!"}), 201
 
 #CALCULAR SALDO:
 
@@ -73,3 +101,23 @@ def calcular_saldo():
         'saidas': total_saidas,
         'saldo_total': saldo
     })
+
+#LISTAR TIPOS DE TRANSAÇÃO:
+
+@app_routes.route('/controle', methods=['GET'])
+def listar_transacoes():
+    try:
+        transacoes = Transacao.query.all()
+        resultado = []
+        for t in transacoes:
+            resultado.append({
+                "id": t.id,
+                "tipo": t.tipo,
+                "valor": t.valor,
+                "descricao": t.descricao
+                })
+            
+        return(resultado), 200
+    
+    except Exception as e:
+        return jsonify({"erro": f"Ocorreu um erro interno: {str(e)}"}), 500
