@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+import logging
 
 #TRATAMENTO DE ERROS:
 
@@ -14,5 +15,9 @@ def bad_request_error(error):
 
 @errors.app_errorhandler(500)
 def internal_error(error):
+    logging.exception("Erro interno:")
     return jsonify({'erro': 'Erro interno no servidor.'}), 500
 
+@errors.app_errorhandler(Exception)
+def unhandled_exception(error):
+    return jsonify({"erro": str(error)}), 500
